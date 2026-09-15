@@ -1,6 +1,4 @@
-streamlit
-matplotlib==3.11.0
-requests
-pandas
-seaborn
-plotly
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import plotly.express as px
