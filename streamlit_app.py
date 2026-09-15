@@ -100,7 +100,7 @@ try:
         # Mostrar gráfico en ancho completo
         st.plotly_chart(fig, use_container_width=True)
         # 5. Mostrar Tabla de Datos expandible y Botones de Descarga
-        with st.expander("👀 Ver tabla con el histórico de datos limpios (Pandas DataFrame)"):
+        with st.expander("👀 Ver tabla con el histórico de datos )"):
             
             # Ordenamos los datos para mostrar lo más reciente arriba
             df_ordenado = data.sort_values(by="Fecha", ascending=False)
