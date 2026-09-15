@@ -1,0 +1,6 @@
+streamlit
+matplotlib==3.11.0
+requests
+pandas
+seaborn
+plotly
