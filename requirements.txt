@@ -1,5 +1,4 @@
-import streamlit as st
-import yfinance as yf
-import pandas as pd
-import io
-import plotly.express as px
+yfinance
+pandas
+plotly
+openpyxl
