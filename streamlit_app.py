@@ -5,13 +5,13 @@ import plotly.express as px
 
 # Configuración del Dashboard
 st.set_page_config(
-    page_title="Dashboard Petróleo",
+    page_title="Dashboard Petróleo y Dolar",
     page_icon="📊",
     layout="wide",
 )
 
-st.title("📊 Variación del Precio del Petróleo")
-st.markdown("### Se realizará la visualización del precio del petróleo en tiempo real")
+st.title("📊 Variación del Precio del Petróleo y del Dolar")
+st.markdown("### Se realizará la visualización del precio del petróleo y del dolar en tiempo real")
 st.write("Datos extraídos de forma pública a través de Yahoo Finance")
 
 
