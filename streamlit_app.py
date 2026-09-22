@@ -62,19 +62,18 @@ try:
         if periodo == "1d" and (data.empty or df.empty):
             data = yf.download(ticker, period="3d", interval="5m", multi_level_index=False)
             df = yf.download(tick, period="3d", interval="5m", multi_level_index=False)
-            st.warning("⚠️ Mercados cerrados hoy. Mostrando últimos datos intradía disponibles (Ventana de 3 días).")
+            st.warning("⚠️ Mercados cerrados. Mostrando últimos datos intradía disponibles (Ventana de 3 días).")
     if not data.empty and not df.empty:
         st.success("✅ ¡Datos cargados correctamente de forma pública!")
-        
-        # 3. Procesamiento y Limpieza de Datos con Pandas
-        data = data.reset_index()
-        df = df.reset_index()
-      
         # Yahoo Finance a veces devuelve MultiIndex en las columnas, lo aplanamos
         if isinstance(data.columns, pd.MultiIndex) :
             data.columns = data.columns.get_level_values(0)
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
+        # 3. Procesamiento y Limpieza de Datos con Pandas
+        data = data.reset_index()
+        df = df.reset_index()
+      
         columna_fecha_original = 'Datetime' if 'Datetime' in data.columns else 'Date'   
          # Renombrar columnas para mayor claridad
         data = data[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
