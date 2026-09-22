@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 import plotly.express as px
 import io
-import datetime  
+from datetime import datetime as dt 
 import pytz
 
 # Configuración del Dashboard
@@ -80,7 +80,7 @@ try:
         columna_fecha_original = 'Datetime' if 'Datetime' in data.columns else 'Date'   
         # --- CORRECCIÓN DE ZONA HORARIA LOCAL ---
         # Detectamos la zona horaria del sistema donde corre la app (Local)
-        zona_local = datetime.now().astimezone().tzinfo
+        zona_local = dt.now().astimezone().tzinfo
         
         for frame in [data, df]:
             if pd.api.types.is_datetime64_any_dtype(frame[columna_fecha_original]):
