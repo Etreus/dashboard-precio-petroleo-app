@@ -56,8 +56,8 @@ try:
     # 2. Descarga de datos históricos desde Yahoo Finance
     with st.spinner("Descargando datos del mercado..."):
         # Descarga los datos con un intervalo diario
-        data = yf.download(ticker, period = periodo, interval = intervalo)
-        df = yf.download(tick, period = periodo, interval = intervalo)
+        data = yf.download(ticker, period = periodo, interval = intervalo, group_by="ticker")
+        df = yf.download(tick, period = periodo, interval = intervalo, group_by="ticker")
     if not data.empty and not df.empty:
         st.success("✅ ¡Datos cargados correctamente de forma pública!")
         
