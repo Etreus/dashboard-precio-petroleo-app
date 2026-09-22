@@ -2,6 +2,9 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
+import io
+import datetime  
+import pytz
 
 # Configuración del Dashboard
 st.set_page_config(
