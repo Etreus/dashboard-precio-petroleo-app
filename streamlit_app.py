@@ -111,8 +111,8 @@ try:
             
         with kpi_col2:
             # Corregido: Variables redefinidas correctamente para Divisa
-            divisa_ultima = float(df['Cierre'].iloc[-1].item())
-            divisa_anterior = float(df['Cierre'].iloc[-2].item()) if len(df) > 1 else divisa_ultima
+            divisa_ultima = float(df['Cierre'].iloc[-1])
+            divisa_anterior = float(df['Cierre'].iloc[-2]) if len(df) > 1 else divisa_ultima
             delta_divisa = divisa_ultima - divisa_anterior
             
             # Formato dinámico según la divisa seleccionada
