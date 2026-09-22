@@ -58,6 +58,11 @@ try:
         # Descarga los datos con un intervalo diario
         data = yf.download(ticker, period = periodo, interval = intervalo)
         df = yf.download(tick, period = periodo, interval = intervalo)
+        # RESPALDO: Si seleccionó 1 Día y el mercado está cerrado (vacío), ampliamos a 3 días
+        if periodo == "1d" and (data.empty or df.empty):
+            data = yf.download(ticker, period="3d", interval="5m", multi_level_index=False)
+            df = yf.download(tick, period="3d", interval="5m", multi_level_index=False)
+            st.warning("⚠️ Mercados cerrados hoy. Mostrando últimos datos intradía disponibles (Ventana de 3 días).")
     if not data.empty and not df.empty:
         st.success("✅ ¡Datos cargados correctamente de forma pública!")
         
