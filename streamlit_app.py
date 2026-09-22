@@ -75,6 +75,17 @@ try:
         df = df.reset_index()
       
         columna_fecha_original = 'Datetime' if 'Datetime' in data.columns else 'Date'   
+        # --- CORRECCIÓN DE ZONA HORARIA LOCAL ---
+        # Detectamos la zona horaria del sistema donde corre la app (Local)
+        zona_local = datetime.now().astimezone().tzinfo
+        
+        for frame in [data, df]:
+            if pd.api.types.is_datetime64_any_dtype(frame[columna_fecha_original]):
+                # Si no tiene zona horaria asignada (tz-naive), le asignamos UTC (que usa yfinance por defecto en intradía)
+                if frame[columna_fecha_original].dt.tz is None:
+                    frame[columna_fecha_original] = frame[columna_fecha_original].dt.tz_localize('UTC')
+                # Convertimos a la zona horaria local del entorno de ejecución
+                frame[columna_fecha_original] = frame[columna_fecha_original].dt.tz_convert(zona_local)
          # Renombrar columnas para mayor claridad
         data = data[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
         data.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
