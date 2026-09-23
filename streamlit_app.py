@@ -1,3 +1,4 @@
+
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -8,13 +9,13 @@ import pytz
 
 # Configuración del Dashboard
 st.set_page_config(
-    page_title="Dashboard Petróleo y Dolar",
+    page_title="Dashboard Dólar, Petróleo y Cobre",
     page_icon="📊",
     layout="wide",
 )
 
-st.title("📊 Variación del Precio del Petróleo y del Dolar")
-st.markdown("### Se realizará la visualización del precio del petróleo y del dolar en tiempo real")
+st.title("📊 Variación del Precio del Dólar, Petróleo y del Cobre ")
+st.markdown("### Se realizará la visualización del precio del dólar, del petróleo y del cobre en tiempo real")
 st.write("Datos extraídos de forma pública a través de Yahoo Finance")
 
 
@@ -24,7 +25,7 @@ col1, col2, col3 = st.columns(3)
 with col1: 
     tipo_cambio = st.selectbox(
         "Selecciona el tipo de cambio:",
-        ["Dolar a Peso","Pesos a Dolar" ]
+        ["Dólar a Peso","Pesos a Dólar" ]
     )
     
 with col2:
@@ -42,7 +43,8 @@ with col3:
     
 # Mapeo de parámetros para la consulta
 ticker = "CL=F" if "WTI" in tipo_petroleo else "BZ=F"
-tick = "CLPUSD=X" if tipo_cambio == "Pesos a Dolar" else "USDCLP=X"
+tick = "CLPUSD=X" if tipo_cambio == "Pesos a Dólar" else "USDCLP=X"
+ticker_cobre = "HG=F"  # Futuros de Cobre en COMEX
 periodo_map = {"1 Día":"1d","1 Semana" :"5d","1 Mes": "1mo", "3 Meses": "3mo", "6 Meses": "6mo", "1 Año": "1y"}
 periodo = periodo_map[temporalidad]
 
@@ -61,10 +63,12 @@ try:
         # Descarga los datos con un intervalo diario
         data = yf.download(ticker, period = periodo, interval = intervalo)
         df = yf.download(tick, period = periodo, interval = intervalo)
+        data_cobre = yf.download(ticker_cobre, period=periodo, interval=intervalo, multi_level_index=False)
         # RESPALDO: Si seleccionó 1 Día y el mercado está cerrado (vacío), ampliamos a 3 días
         if periodo == "1d" and (data.empty or df.empty):
             data = yf.download(ticker, period="3d", interval="5m", multi_level_index=False)
             df = yf.download(tick, period="3d", interval="5m", multi_level_index=False)
+            data_cobre = yf.download(ticker_cobre, period="3d", interval="5m", multi_level_index=False)
             st.warning("⚠️ Uno o más mercados cerrados. Mostrando últimos datos intradía disponibles, ventana de 3 días.")
     if not data.empty and not df.empty:
         st.success("✅ ¡Datos cargados correctamente de forma pública!")
@@ -73,16 +77,19 @@ try:
             data.columns = data.columns.get_level_values(0)
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
+        if isinstance(df.columns, pd.MultiIndex):
+            data_cobre.columns = data_cobre.columns.get_level_values(0)
+            
         # 3. Procesamiento y Limpieza de Datos con Pandas
         data = data.reset_index()
         df = df.reset_index()
-      
+        data_cobre= data_cobre.reset_index()
         columna_fecha_original = 'Datetime' if 'Datetime' in data.columns else 'Date'   
         # --- CORRECCIÓN DE ZONA HORARIA LOCAL ---
         # Detectamos la zona horaria del sistema donde corre la app (Local)
         zona_local = dt.now().astimezone().tzinfo
         
-        for frame in [data, df]:
+        for frame in [data, df, data_cobre]:
             if pd.api.types.is_datetime64_any_dtype(frame[columna_fecha_original]):
                 # Si no tiene zona horaria asignada (tz-naive), le asignamos UTC (que usa yfinance por defecto en intradía)
                 if frame[columna_fecha_original].dt.tz is None:
@@ -94,24 +101,31 @@ try:
         data.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
        
         df = df[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
-        df.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']     
+        df.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
+        
+        data_cobre = data_cobre[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
+        data_cobre.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
+        
+        # CORRECCIÓN DE UNIDAD PARA EL COBRE: Convertir de centavos (US¢) a Dólares puros (USD)
+        for col in ['Cierre', 'Apertura', 'Máximo', 'Mínimo']:
+            data_cobre[col] = data_cobre[col] / 100.0
         # --- LÓGICA DEL ESTADO DEL MERCADO ---
         tz_ny = pytz.timezone('America/New_York')
         ahora_ny = dt.now(tz_ny)
         dia_semana_ny = ahora_ny.weekday() # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
         hora_ny = ahora_ny.hour
 
-        # 1. Estado del Mercado del Petróleo (Futuros globales de commodities)
+         # 1. Estado para los Commodities (Aplica idéntico para Petróleo y Cobre)
         if dia_semana_ny == 5: # Sábado cerrado
-            petroleo_abierto = False
+            mercado_commodities_abierto = False
         elif dia_semana_ny == 4 and hora_ny >= 17: # Viernes cierra a las 17:00 EST
-            petroleo_abierto = False
+            mercado_commodities_abierto = False
         elif dia_semana_ny == 6 and hora_ny < 18: # Domingo abre a las 18:00 EST
-            petroleo_abierto = False
-        elif hora_ny == 17: # Receso técnico diario de 17:00 a 18:00 EST
-            petroleo_abierto = False
+            mercado_commodities_abierto = False
+        elif hora_ny == 17: # Receso técnico diario de 17:00 a 18:00 EST (Lun a Jue)
+            mercado_commodities_abierto = False
         else:
-            petroleo_abierto = True
+            mercado_commodities_abierto = True
 
         # 2. Estado del Mercado del Dólar (Interbancario en Chile o Forex Global)
         # Forzamos la zona horaria de Chile para evaluar el mercado interbancario local
@@ -121,7 +135,7 @@ try:
         hora_cl = ahora_cl.hour
         minuto_cl = ahora_cl.minute
 
-        if tipo_cambio == "Dolar a Peso":
+        if tipo_cambio == "Dólar a Peso":
             # CORRECCIÓN AQUÍ: Evaluamos correctamente si es Sábado (5) o Domingo (6)
             if dia_semana_cl in [5,6]: 
                 divisa_abierta = False
@@ -141,25 +155,17 @@ try:
                 divisa_abierta = True
 
         # Renderizar indicadores visuales organizados en columnas
-        ind_col1, ind_col2 = st.columns(2)
-        with ind_col1:
-            if petroleo_abierto:
-                st.markdown(f"**Mercado {tipo_petroleo}:** 🟢 **ABIERTO** ( Cotizaciones en tiempo real) ")
-            else:
-                st.markdown(f"**Mercado {tipo_petroleo}:** 🔴 **CERRADO** (Precios de cierre)")
-                
+        ind_col1, ind_col2, ind_col3 = st.columns(3)
         with ind_col2:
-            if divisa_abierta:
-                st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🟢 **ABIERTO** ( Cotizaciones en tiempo real) ")
-            else:
-                if tipo_cambio == "Dolar a Peso":
-                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Horario bancario: Lun a Vie 09:00 a 14:00)")
-                else:
-                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Cierre de fin de semana)")
+            st.markdown(f"**Petróleo ({tipo_petroleo}):** " + ("🟢 **ABIERTO**" if mercado_commodities_abierto else "🔴 **CERRADO**"))
+        with ind_col3:
+            st.markdown(f"**Cobre (COMEX):** " + ("🟢 **ABIERTO**" if mercado_commodities_abierto else "🔴 **CERRADO**"))
+        with ind_col1:
+            st.markdown(f"**Divisa ({tipo_cambio}):** " + ("🟢 **ABIERTO**" if divisa_abierta else "🔴 **CERRADO**"))
         
          # --- KPI's ---
-        kpi_col1, kpi_col2 = st.columns(2)
-        with kpi_col1:
+        kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
+        with kpi_col2:
             # Corregido: Variables redefinidas correctamente para Petróleo
             petroleo_ultimo = float(data['Cierre'].iloc[-1].item())
             petroleo_anterior = float(data['Cierre'].iloc[0].item()) if len(data) > 1 else petroleo_ultimo
@@ -173,7 +179,17 @@ try:
                 
             )
             
-        with kpi_col2:
+        with kpi_col3:  # Cobre al extremo derecho
+            cobre_ultimo = float(data_cobre['Cierre'].iloc[-1].item())
+            cobre_anterior = float(data_cobre['Cierre'].iloc[0].item()) if len(data_cobre) > 1 else cobre_ultimo
+            variacion_cobre = cobre_ultimo - cobre_anterior
+            st.metric(
+                label="Último Precio Cobre (COMEX)", 
+                value=f"${cobre_ultimo:,.4f} USD/lb",
+                delta=float(round(variacion_cobre, 4)),
+                help=f"Variación vs inicio del periodo ({temporalidad})"
+            )    
+        with kpi_col1:
             # Corregido: Variables redefinidas correctamente para Divisa
             divisa_ultima = float(df['Cierre'].iloc[-1].item())
             divisa_anterior = float(df['Cierre'].iloc[0].item()) if len(df) > 1 else divisa_ultima
@@ -217,9 +233,18 @@ try:
         fig_divisa.update_layout(hovermode="x unified", template="plotly_white", title_font_size=20)
         fig_divisa.update_xaxes(tickformat=formato_fecha)
         st.plotly_chart(fig_divisa, use_container_width=True)
+        
+        fig_cobre = px.line(data_cobre, x="Fecha", y="Cierre", 
+                            title=f"Evolución del Cobre - {temporalidad} (COMEX)",
+                            labels={"Fecha": "Fecha de Cotización", "Cierre": "Precio por Libra (USD)"},
+                            markers=(periodo in ["1d", "5d"]))
+        fig_cobre.update_traces(line_color="orange")
+        fig_cobre.update_layout(hovermode="x unified", template="plotly_white", title_font_size=20)
+        fig_cobre.update_xaxes(tickformat=formato_fecha)
+        st.plotly_chart(fig_cobre, width="stretch")
         # 5. Mostrar Tabla de Datos expandible y Botones de Descarga
         with st.expander("👀 Ver tabla con el histórico de datos "):
-            tab1, tab2 = st.tabs(["Datos Petróleo", "Datos Divisas"])
+            tab1, tab2, tab3 = st.tabs(["Datos Petróleo", "Datos Divisas", "Datos Cobre"])
                       
             # Creamos dos columnas dentro del expansor para los botones
           
@@ -307,11 +332,43 @@ try:
                         use_container_width=True
                         )
            
-            
+            with tab3:
+                c_ordenado = data_cobre.sort_values(by="Fecha", ascending=False)
+                
+                c_mostrar = c_ordenado.copy()
+                if pd.api.types.is_datetime64_any_dtype(c_mostrar['Fecha']):
+                    c_mostrar['Fecha'] = c_mostrar['Fecha'].dt.strftime('%Y-%m-%d %H:%M:%S' if periodo in ["1d", "5d"] else '%Y-%m-%d')
+                st.dataframe(c_mostrar, width="stretch")
+                
+                c_btn1, c_btn2 = st.columns(2)
+                with c_btn1:
+                    csv_data_cobre = c_ordenado.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Descargar formato .CSV",
+                        data=csv_data_cobre,
+                        file_name=f"historico_cobre_{ticker_cobre}.csv",
+                        mime="text/csv",
+                        width="stretch"
+                    )
+                with c_btn2:
+                    c_excel = c_ordenado.copy()
+                    if pd.api.types.is_datetime64_any_dtype(c_excel['Fecha']):
+                        c_excel['Fecha'] = c_excel['Fecha'].dt.tz_localize(None)
+                
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                        c_excel.to_excel(writer, index=False, sheet_name='Datos_Cobre')
+                
+                    excel_data_cobre = buffer.getvalue()
+                    st.download_button(
+                        label="📊 Descargar formato .XLSX (Excel)",
+                        data=excel_data_cobre,
+                        file_name=f"historico_cobre_{ticker_cobre}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        width="stretch"
+                    )
     else:
         st.error("❌ No se encontraron registros financieros para este símbolo.")
         
 except Exception as e:
-    st.error(f"💥 Error inesperado al procesar los datos: {e}")
-
-            
+    st.error(f"💥 Error inesperado al procesar los datos: {e}")        
