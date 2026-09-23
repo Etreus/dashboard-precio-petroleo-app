@@ -122,8 +122,8 @@ try:
         minuto_cl = ahora_cl.minute
 
         if tipo_cambio == "Dolar a Peso":
-            # Mercado interbancario chileno: Lunes a Viernes de 09:00 a 14:00 hrs
-            if dia_semana_cl in: # Fin de semana cerrado
+            # CORRECCIÓN AQUÍ: Evaluamos correctamente si es Sábado (5) o Domingo (6)
+            if dia_semana_cl in: 
                 divisa_abierta = False
             elif 9 <= hora_cl < 14:
                 divisa_abierta = True
