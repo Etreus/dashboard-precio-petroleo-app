@@ -94,7 +94,32 @@ try:
         data.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
        
         df = df[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
-        df.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']
+        df.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']     
+        # --- LÓGICA DEL ESTADO DEL MERCADO DE COMMODITIES ---
+        # El mercado de futuros de NYMEX/ICE abre los domingos a las 18:00 EST y cierra los viernes a las 17:00 EST.
+        # Cierra diariamente un break de 17:00 a 18:00 EST.
+        tz_ny = pytz.timezone('America/New_York')
+        ahora_ny = datetime.now(tz_ny)
+        dia_semana = ahora_ny.weekday() # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
+        hora = ahora_ny.hour
+        # Condición simplificada de mercado abierto (Futuros electrónicos)
+        if dia_semana == 5: # Sábado siempre cerrado
+            mercado_abierto = False
+        elif dia_semana == 4 and hora >= 17: # Viernes cierra a las 17:00 EST
+            mercado_abierto = False
+        elif dia_semana == 6 and hora < 18: # Domingo abre a las 18:00 EST
+            mercado_abierto = False
+        elif hora == 17: # Descanso diario de 17:00 a 18:00 EST
+            mercado_abierto = False
+        else:
+            mercado_abierto = True
+
+        # Renderizar indicador visual del mercado
+        if mercado_abierto:
+            st.markdown("### Estado del Mercado: 🟢 **ABIERTO** (Cotizaciones en tiempo real)")
+        else:
+            st.markdown("### Estado del Mercado: 🔴 **CERRADO** (Mostrando precios de cierre)")
+        
          # --- KPI's ---
         kpi_col1, kpi_col2 = st.columns(2)
         with kpi_col1:
