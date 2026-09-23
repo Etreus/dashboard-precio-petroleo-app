@@ -161,7 +161,13 @@ try:
         with ind_col3:
             st.markdown(f"**Cobre (COMEX):** " + ("🟢 **ABIERTO**" if mercado_commodities_abierto else "🔴 **CERRADO**"))
         with ind_col1:
-            st.markdown(f"**Divisa ({tipo_cambio}):** " + ("🟢 **ABIERTO**" if divisa_abierta else "🔴 **CERRADO**"))
+            if divisa_abierta:
+                st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🟢 **ABIERTO**")
+            else:
+                if tipo_cambio == "Dolar a Peso":
+                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Horario bancario: Lun a Vie 09:00 a 14:00)")
+                else:
+                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Cierre de fin de semana)")
         
          # --- KPI's ---
         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
