@@ -123,7 +123,7 @@ try:
 
         if tipo_cambio == "Dolar a Peso":
             # CORRECCIÓN AQUÍ: Evaluamos correctamente si es Sábado (5) o Domingo (6)
-            if dia_semana_cl in: 
+            if dia_semana_cl in [5,6]: 
                 divisa_abierta = False
             elif 9 <= hora_cl < 14:
                 divisa_abierta = True
