@@ -95,30 +95,67 @@ try:
        
         df = df[[columna_fecha_original, 'Close', 'Open', 'High', 'Low', 'Volume']]
         df.columns = ['Fecha', 'Cierre', 'Apertura', 'Máximo', 'Mínimo', 'Volumen']     
-        # --- LÓGICA DEL ESTADO DEL MERCADO DE COMMODITIES ---
-        # El mercado de futuros de NYMEX/ICE abre los domingos a las 18:00 EST y cierra los viernes a las 17:00 EST.
-        # Cierra diariamente un break de 17:00 a 18:00 EST.
+        # --- LÓGICA DEL ESTADO DEL MERCADO ---
         tz_ny = pytz.timezone('America/New_York')
         ahora_ny = dt.now(tz_ny)
-        dia_semana = ahora_ny.weekday() # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
-        hora = ahora_ny.hour
-        # Condición simplificada de mercado abierto (Futuros electrónicos)
-        if dia_semana == 5: # Sábado siempre cerrado
-            mercado_abierto = False
-        elif dia_semana == 4 and hora >= 17: # Viernes cierra a las 17:00 EST
-            mercado_abierto = False
-        elif dia_semana == 6 and hora < 18: # Domingo abre a las 18:00 EST
-            mercado_abierto = False
-        elif hora == 17: # Descanso diario de 17:00 a 18:00 EST
-            mercado_abierto = False
-        else:
-            mercado_abierto = True
+        dia_semana_ny = ahora_ny.weekday() # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
+        hora_ny = ahora_ny.hour
 
-        # Renderizar indicador visual del mercado
-        if mercado_abierto:
-            st.markdown("### Estado del Mercado: 🟢 **ABIERTO** (Cotizaciones en tiempo real)")
+        # 1. Estado del Mercado del Petróleo (Futuros globales de commodities)
+        if dia_semana_ny == 5: # Sábado cerrado
+            petroleo_abierto = False
+        elif dia_semana_ny == 4 and hora_ny >= 17: # Viernes cierra a las 17:00 EST
+            petroleo_abierto = False
+        elif dia_semana_ny == 6 and hora_ny < 18: # Domingo abre a las 18:00 EST
+            petroleo_abierto = False
+        elif hora_ny == 17: # Receso técnico diario de 17:00 a 18:00 EST
+            petroleo_abierto = False
         else:
-            st.markdown("### Estado del Mercado: 🔴 **CERRADO** (Mostrando precios de cierre)")
+            petroleo_abierto = True
+
+        # 2. Estado del Mercado del Dólar (Interbancario en Chile o Forex Global)
+        # Forzamos la zona horaria de Chile para evaluar el mercado interbancario local
+        tz_cl = pytz.timezone('America/Santiago')
+        ahora_cl = dt.now(tz_cl)
+        dia_semana_cl = ahora_cl.weekday()
+        hora_cl = ahora_cl.hour
+        minuto_cl = ahora_cl.minute
+
+        if tipo_cambio == "Dolar a Peso":
+            # Mercado interbancario chileno: Lunes a Viernes de 09:00 a 14:00 hrs
+            if dia_semana_cl in: # Fin de semana cerrado
+                divisa_abierta = False
+            elif 9 <= hora_cl < 14:
+                divisa_abierta = True
+            else:
+                divisa_abierta = False
+        else:
+            # Forex Internacional (Pesos a Dólar): Abierto continuo desde Domingo 17:00 EST a Viernes 17:00 EST
+            if dia_semana_ny == 5:
+                divisa_abierta = False
+            elif dia_semana_ny == 4 and hora_ny >= 17:
+                divisa_abierta = False
+            elif dia_semana_ny == 6 and hora_ny < 17:
+                divisa_abierta = False
+            else:
+                divisa_abierta = True
+
+        # Renderizar indicadores visuales organizados en columnas
+        ind_col1, ind_col2 = st.columns(2)
+        with ind_col1:
+            if petroleo_abierto:
+                st.markdown(f"**Mercado {tipo_petroleo}:** 🟢 **ABIERTO** ( Cotizaciones en tiempo real) ")
+            else:
+                st.markdown(f"**Mercado {tipo_petroleo}:** 🔴 **CERRADO** (Precios de cierre)")
+                
+        with ind_col2:
+            if divisa_abierta:
+                st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🟢 **ABIERTO** ( Cotizaciones en tiempo real) ")
+            else:
+                if tipo_cambio == "Dolar a Peso":
+                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Horario bancario: Lun a Vie 09:00 a 14:00)")
+                else:
+                    st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Cierre de fin de semana)")
         
          # --- KPI's ---
         kpi_col1, kpi_col2 = st.columns(2)
