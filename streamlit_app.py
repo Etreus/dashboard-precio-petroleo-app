@@ -65,7 +65,7 @@ try:
         if periodo == "1d" and (data.empty or df.empty):
             data = yf.download(ticker, period="3d", interval="5m", multi_level_index=False)
             df = yf.download(tick, period="3d", interval="5m", multi_level_index=False)
-            st.warning("⚠️ Mercados cerrados. Mostrando últimos datos intradía disponibles (Ventana de 3 días).")
+            st.warning("⚠️ Uno o más mercados cerrados. Mostrando últimos datos intradía disponibles, ventana de 3 días.")
     if not data.empty and not df.empty:
         st.success("✅ ¡Datos cargados correctamente de forma pública!")
         # Yahoo Finance a veces devuelve MultiIndex en las columnas, lo aplanamos
