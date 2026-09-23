@@ -164,7 +164,7 @@ try:
             if divisa_abierta:
                 st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🟢 **ABIERTO**")
             else:
-                if tipo_cambio == "Dolar a Peso":
+                if tipo_cambio == "Dólar a Peso":
                     st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Horario bancario: Lun a Vie 09:00 a 14:00)")
                 else:
                     st.markdown(f"**Mercado Divisa ({tipo_cambio}):** 🔴 **CERRADO** (Cierre de fin de semana)")
