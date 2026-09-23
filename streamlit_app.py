@@ -99,7 +99,7 @@ try:
         # El mercado de futuros de NYMEX/ICE abre los domingos a las 18:00 EST y cierra los viernes a las 17:00 EST.
         # Cierra diariamente un break de 17:00 a 18:00 EST.
         tz_ny = pytz.timezone('America/New_York')
-        ahora_ny = datetime.now(tz_ny)
+        ahora_ny = dt.now(tz_ny)
         dia_semana = ahora_ny.weekday() # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
         hora = ahora_ny.hour
         # Condición simplificada de mercado abierto (Futuros electrónicos)
