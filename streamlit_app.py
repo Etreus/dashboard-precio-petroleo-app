@@ -106,7 +106,9 @@ try:
             st.metric(
                 label=f"Último Precio ({tipo_petroleo})", 
                 value=f"${petroleo_ultimo:,.2f} USD",
-                delta=float(round(variacion_petroleo, 2))
+                delta=float(round(variacion_petroleo, 2)) ,
+                help=f"Variación de ${variacion_petroleo:,.2f} USD vs el inicio del periodo seleccionado"
+                
             )
             
         with kpi_col2:
@@ -120,7 +122,8 @@ try:
             st.metric(
                 label=f"Último Precio ({tipo_cambio})", 
                 value=f"{divisa_ultima:,.4f} {simbolo_moneda}",
-                delta=float(round(delta_divisa, 4))
+                delta=float(round(delta_divisa, 4)) , 
+                help=f"Variación de {delta_divisa:,.4f} {simbolo_moneda} vs el inicio del periodo seleccionado"
             )
 
        
